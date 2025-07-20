@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Sound Maze Navigator - Ultimate Accessible Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      max-height: 100vh;
+      background: linear-gradient(135deg,#0a0a0a 0%,#1a1a2e 50%,#0a0a0a 100%);
+      color: #fff;
+      margin: 0;
+      padding: 10px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .game-container {
+      background: linear-gradient(145deg,#1a1a1a 0%,#2a2a2a 100%);
+      border-radius: 15px;
+      padding: 15px;
+      box-shadow: 0 0 40px rgba(0,212,255,0.4),inset 0 0 20px rgba(255,255,255,0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 550px;
+      height: calc(100vh - 20px);
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .level-header {
+      display: flex;justify-content: space-between;
+      align-items: center;width: 100%;
+      margin-bottom: 10px;padding: 8px 15px;
+      background: rgba(0,212,255,0.1);
+      border-radius: 8px;
+      border: 1px solid rgba(0,212,255,0.3);
+    }
+    .level-info { font-size:1.1em;font-weight:bold;color:#00d4ff;}
+    .timer-display { font-size:1em;color:#ffaa00;font-weight:bold;}
+    .maze-grid {
+      display: grid;gap:2px;
+      width:100%;max-width:350px;
+      padding:10px;background:radial-gradient(circle,#2a2a2a 0%,#1a1a1a 100%);
+      border-radius:12px;aspect-ratio: 1/1;
+      position: relative;flex-shrink: 0;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    }
+    .maze-cell {
+      width:100%;padding-bottom:100%;
+      position:relative;background-color:#404040;
+      border-radius:4px;transition:all 0.3s;
+      box-sizing:border-box;overflow:hidden;
+    }
+    .maze-cell.wall {background:linear-gradient(45deg,#1a1a1a 0%,#2a2a2a 100%);box-shadow:inset 0 0 10px rgba(0,0,0,0.8);}
+    .maze-cell.player {background:radial-gradient(circle,#00d4ff 0%,#0099cc 100%);box-shadow:0 0 25px rgba(0,212,255,0.9);animation:playerPulse 1.5s ease-in-out infinite;}
+    .maze-cell.exit {background:radial-gradient(circle,#00ff88 0%,#00cc66 100%);box-shadow:0 0 20px rgba(0,255,136,0.8);animation:exitGlow 2s ease-in-out infinite alternate;}
+    .maze-cell.power-up {background:radial-gradient(circle,#ff6b00 0%,#ff4500 100%);box-shadow:0 0 15px rgba(255,107,0,0.7);animation:powerUpSpin 3s linear infinite;}
+    .maze-cell.beacon {background:radial-gradient(circle,#ffff00 0%,#ffcc00 100%);box-shadow:0 0 18px rgba(255,255,0,0.6);animation:beaconPulse 1s ease-in-out infinite alternate;}
+    .maze-cell.portal {background:radial-gradient(circle,#9900ff 0%,#6600cc 100%);box-shadow:0 0 20px rgba(153,0,255,0.8);animation:portalSwirl 2s linear infinite;}
+    @keyframes playerPulse {0%,100%{transform:scale(1);box-shadow:0 0 25px rgba(0,212,255,0.9);}50%{transform:scale(1.1);box-shadow:0 0 35px rgba(0,212,255,1);}}
+    @keyframes exitGlow {0%{box-shadow:0 0 20px rgba(0,255,136,0.6);}100%{box-shadow:0 0 30px rgba(0,255,136,1);}}
+    @keyframes powerUpSpin {0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+    @keyframes beaconPulse {0%{box-shadow:0 0 18px rgba(255,255,0,0.4);}100%{box-shadow:0 0 25px rgba(255,255,0,0.9);}}
+    @keyframes portalSwirl {0%{transform:rotate(0deg) scale(1);}50%{transform:rotate(180deg) scale(1.05);}100%{transform:rotate(360deg) scale(1);}}
+    .info-panel {
+      background: linear-gradient(135deg,#2a2a2a 0%,#1a1a1a 100%);
+      border-radius:10px;padding:12px;margin-top:10px;width:100%;
+      text-align:center;flex-shrink:0;border:1px solid rgba(0,212,255,0.2);}
+    .stats-grid {display: grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;}
+    .stat-item {background:rgba(0,212,255,0.1);padding:6px 10px;border-radius:6px;border:1px solid rgba(0,212,255,0.3);}
+    #status-message {font-size:1em;color:#fff;margin-bottom:8px;font-weight:bold;}
+    .achievement-banner {position:absolute;top:20px;right:-300px;background:linear-gradient(45deg,#ffaa00,#ff6600);color:#000;padding:10px 20px;border-radius:25px;font-weight:bold;box-shadow:0 0 20px rgba(255,170,0,0.6);transition:right 0.5s;z-index:1000;}
+    .achievement-banner.show {right:20px;}
+    .controls {margin-top:8px;display: flex;gap:6px;flex-wrap:wrap;justify-content: center;flex-shrink:0;}
+    button {background:linear-gradient(145deg,#00d4ff 0%, #0099cc 100%);color:#000;border:none;padding:6px 12px;border-radius:6px;font-size:0.9em;font-weight: bold;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 5px rgba(0,0,0,0.3);}
+    button:hover,button:focus {background:linear-gradient(145deg,#33ddff 0%, #00aadd 100%);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,212,255,0.4);}
+    button.mode-button {background:linear-gradient(145deg,#ff6b00 0%,#cc5500 100%);color:#fff;}
+    button.mode-button:hover{background:linear-gradient(145deg,#ff8833 0%,#dd6600 100%);}
+    .mobile-start-overlay {
+      position:absolute;top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,0.85);
+      display:flex;align-items:center;justify-content:center;
+      z-index:5000;font-size:1.8em;color:#00d4ff;cursor:pointer;
+      text-align:center;flex-direction:column;
+    }
+    .mobile-start-overlay[hidden] {display:none;}
+    .mobile-start-text {
+      background:rgba(0,212,255,0.1);
+      border:2px solid #00d4ff;
+      padding:20px 30px;border-radius:15px;
+      margin-bottom:20px;
+    }
+    .swipe-hint {
+      font-size:0.6em;color:#aaa;
+      margin-top:15px;
+    }
+    .help-overlay {position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.95);display:flex;justify-content:center;align-items:center;z-index:2000;opacity:0;visibility:hidden;transition:all 0.3s;}
+    .help-overlay.visible {opacity:1;visibility:visible;}
+    .help-content {background:linear-gradient(145deg,#1a1a1a 0%,#2a2a2a 100%);padding:30px;border-radius:15px;max-width:80%;width:500px;max-height:80vh;overflow-y:auto;text-align:left;border:2px solid #00d4ff;}
+    @media (max-height: 600px) {
+      .game-container {padding:10px;}
+      .maze-grid {max-width:280px;padding:8px;}
+      .info-panel {padding:8px;margin-top:8px;}
+      #status-message,.stats-grid,.stat-item{font-size:0.9em;}
+      button{padding:6px 12px;font-size:0.85em;}
+    }
+  </style>
+</head>
+<body>
+  <div class="achievement-banner" id="achievement-banner"></div>
+  <div class="game-container" role="application" aria-label="Enhanced Sound Maze Navigator">
+    <div class="level-header">
+      <div class="level-info" id="level-info">Campaign Mode - Level 1</div>
+      <div class="timer-display" id="timer-display">Time: 0:00</div>
+    </div>
+    <div id="maze-grid" class="maze-grid" role="grid"></div>
+    <div class="info-panel">
+      <p id="status-message" role="status" aria-live="assertive">Welcome! Tap to start (mobile) or press Space/Enter (desktop).</p>
+      <div class="stats-grid">
+        <div class="stat-item"><div id="score-display">Moves: 0</div></div>
+        <div class="stat-item"><div id="power-ups-display">Power-ups: 0</div></div>
+        <div class="stat-item"><div id="position-display">Row 1, Col 1</div></div>
+        <div class="stat-item"><div id="high-score-display">Best: N/A</div></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="mode-button" class="mode-button" aria-label="Select Game Mode">Modes (M)</button>
+      <button id="restart-button" aria-label="Restart Game">New Game</button>
+      <button id="help-button" aria-label="Show Help">Help (H)</button>
+      <button id="scan-button" aria-label="Scan Current Area">Scan (S)</button>
+    </div>
+    <div id="mobile-start-overlay" class="mobile-start-overlay" tabindex="0" role="button" aria-label="Tap to Start Game" style="display:none;">
+      <div class="mobile-start-text">
+        <div>🎮 Tap to Start Game</div>
+        <div class="swipe-hint">Swipe to move • Double-tap to use power-ups</div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="help-overlay" class="help-overlay" role="dialog" aria-modal="true">
+    <div class="help-content">
+      <h2 style="color:#00d4ff;text-align:center;">Sound Maze Navigator</h2>
+      <h3>🎮 Controls</h3>
+      <ul>
+        <li><strong>Mobile:</strong> Swipe to move, Double-tap to use power-ups</li>
+        <li><strong>Desktop:</strong> Arrow keys to move, P for power-ups</li>
+        <li><span style="background: #333; padding: 2px 6px; border-radius: 3px;">Space/Enter</span> - Start game</li>
+        <li><span style="background: #333; padding: 2px 6px; border-radius: 3px;">H</span> - Help</li>
+        <li><span style="background: #333; padding: 2px 6px; border-radius: 3px;">S</span> - Scan area</li>
+        <li><span style="background: #333; padding: 2px 6px; border-radius: 3px;">R</span> - Restart</li>
+      </ul>
+      <h3>🎯 Specials</h3>
+      <ul>
+        <li><strong style="color: #ff6b00;">Power-ups:</strong> Collect for special abilities</li>
+        <li><strong style="color: #ffff00;">Beacons:</strong> Provide exit hints</li>
+        <li><strong style="color: #9900ff;">Portals:</strong> Teleport</li>
+      </ul>
+      <button id="help-close-button" style="margin-top:20px;">Got it! (Escape)</button>
+    </div>
+  </div>
+  
+  <script>
+    class AdvancedAudioManager {
+      constructor() {
+        this.audioContext = null;
+        this.masterVolume = 0.8;
+        this.speechQueue = [];
+        this.isSpeaking = false;
+        this._initCtx();
+      }
+      _initCtx() {
+        try {this.audioContext = new (window.AudioContext||window.webkitAudioContext)();}catch(e){}
+      }
+      speak(text,priority='normal',cb) {
+        const utteranceData = {text,priority,cb};
+        if(priority==='urgent'){
+          this.speechQueue.unshift(utteranceData);
+          if(this.isSpeaking){speechSynthesis.cancel();this.isSpeaking=false;}
+        }else{
+          this.speechQueue.push(utteranceData);
+        }
+        this._processQueue();
+      }
+      _processQueue() {
+        if(this.isSpeaking || this.speechQueue.length===0) return;
+        const {text,cb} = this.speechQueue.shift();
+        this.isSpeaking = true;
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate=1.15;u.pitch=1;u.volume=0.92;
+        u.onend = () => { this.isSpeaking = false; if(cb)cb(); setTimeout(()=>this._processQueue(),120);}
+        u.onerror=()=>{this.isSpeaking=false;this._processQueue();}
+        speechSynthesis.speak(u);
+      }
+      playTone(f,duration=300,type='sine',pan=0){
+        if(!this.audioContext)return;
+        const o=this.audioContext.createOscillator(), g=this.audioContext.createGain(), p=this.audioContext.createStereoPanner();
+        o.connect(g);g.connect(p);p.connect(this.audioContext.destination);
+        o.frequency.value=f;o.type=type;g.gain.setValueAtTime(this.masterVolume*.3,this.audioContext.currentTime);g.gain.exponentialRampToValueAtTime(0.01,this.audioContext.currentTime+duration/1e3);p.pan.value=pan;
+        o.start();o.stop(this.audioContext.currentTime+duration/1e3);
+      }
+      playMovementSound(direction,success=true){
+        const table = {'up':800,'down':400,'left':600,'right':600}, pan = {'up':0, 'down':0, 'left':-0.5, 'right':0.5};
+        this.playTone(success?table[direction]:200,success?200:400,success?'sine':'sawtooth',pan[direction]);
+      }
+      playPowerUpSound(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.playTone(f,200),i*150));}
+      playLevelCompleteSound(){[523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>this.playTone(f,300),i*200));}
+    }
+
+    class CampaignMode {
+      constructor(){ this.name="Campaign"; }
+      generateLevel(lv){return { size:Math.min(7,5+Math.floor(lv/3)), powerUps:Math.floor(lv/2), beacons:1+(lv%2), portals:Math.floor(lv/5), theme:'forest'};}
+      getTimeLimit(){return null;}
+    }
+    
+    class EnhancedMazeGame {
+      constructor() {
+        this.currentMode = new CampaignMode();
+        this.currentLevel = 1;
+        this.achievements = new Set();
+        this.highScores = JSON.parse(localStorage.getItem('enhancedMazeScores'))||{};
+        this.audio = new AdvancedAudioManager();
+        this.elements = {
+          mazeGrid: document.getElementById('maze-grid'),
+          statusMessage: document.getElementById('status-message'),
+          scoreDisplay: document.getElementById('score-display'),
+          powerUpsDisplay: document.getElementById('power-ups-display'),
+          positionDisplay: document.getElementById('position-display'),
+          highScoreDisplay: document.getElementById('high-score-display'),
+          levelInfo: document.getElementById('level-info'),
+          timerDisplay: document.getElementById('timer-display'),
+          restartButton: document.getElementById('restart-button'),
+          helpButton: document.getElementById('help-button'),
+          scanButton: document.getElementById('scan-button'),
+          modeButton: document.getElementById('mode-button'),
+          helpOverlay: document.getElementById('help-overlay'),
+          helpCloseButton: document.getElementById('help-close-button'),
+          achievementBanner: document.getElementById('achievement-banner'),
+          mobileStartOverlay: document.getElementById('mobile-start-overlay')
+        };
+        this.initSwipeControls();
+        this.attachEventListeners();
+        this.initializeGame();
+      }
+      
+      isMobile() {
+        return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ('ontouchstart' in window);
+      }
+      
+      // Enhanced swipe controls with double-tap power-up activation
+      initSwipeControls() {
+        let startX = 0, startY = 0, isTouch = false;
+        let lastTap = 0; // For double-tap detection
+        const minSwipeDistance = 30;
+        const doubleTapDelay = 300; // 300ms window for double-tap
+        
+        const container = document.querySelector('.game-container');
+        
+        container.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            isTouch = true;
+          }
+        }, { passive: true });
+        
+        container.addEventListener('touchend', (e) => {
+          if (!isTouch || e.changedTouches.length !== 1) return;
+          
+          const endX = e.changedTouches[0].clientX;
+          const endY = e.changedTouches[0].clientY;
+          const deltaX = endX - startX;
+          const deltaY = endY - startY;
+          const currentTime = new Date().getTime();
+          const tapLength = currentTime - lastTap;
+          
+          isTouch = false;
+          
+          // Check for double-tap (power-up activation)
+          if (tapLength < doubleTapDelay && tapLength > 0) {
+            this.usePowerUp();
+            lastTap = 0; // Reset to prevent triple-tap issues
+            return;
+          }
+          
+          // Regular swipe detection
+          if (Math.abs(deltaX) >= minSwipeDistance || Math.abs(deltaY) >= minSwipeDistance) {
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+              // Horizontal swipe
+              if (deltaX > 0) {
+                this.movePlayer(0, 1, 'right');
+              } else {
+                this.movePlayer(0, -1, 'left');
+              }
+            } else {
+              // Vertical swipe
+              if (deltaY > 0) {
+                this.movePlayer(1, 0, 'down');
+              } else {
+                this.movePlayer(-1, 0, 'up');
+              }
+            }
+          }
+          
+          lastTap = currentTime;
+        }, { passive: true });
+      }
+      
+      attachEventListeners() {
+        document.addEventListener('keydown', e => this.handleKeyDown(e));
+        this.elements.restartButton.addEventListener('click',()=>this.restart());
+        this.elements.helpButton.addEventListener('click',()=>this.toggleHelp());
+        this.elements.scanButton.addEventListener('click',()=>this.scanArea());
+        this.elements.modeButton.addEventListener('click',()=>this.showAchievement('Sorry, modes not yet implemented in this demo.'));
+        this.elements.helpCloseButton.addEventListener('click',()=>this.toggleHelp());
+        
+        this.elements.mobileStartOverlay.addEventListener('click', () => {
+          this.hideMobileStartOverlay();
+          this.startGame();
+        });
+      }
+      
+      showMobileStartOverlay() {
+        if (this.isMobile()) {
+          this.elements.mobileStartOverlay.style.display = '';
+        }
+      }
+      
+      hideMobileStartOverlay() {
+        this.elements.mobileStartOverlay.style.display = 'none';
+      }
+      
+      startGame() {
+        if (!this.gameActive) {
+          this.gameActive = true;
+          this.hideMobileStartOverlay();
+          this.audio.speak("Game started! " + (this.isMobile() ? "Swipe to move. Double-tap to use power-ups." : "Use arrow keys to navigate. Press P for power-ups."), 'urgent');
+          this.elements.statusMessage.textContent = this.isMobile() ? "Game active - Swipe to move, double-tap for power-ups!" : "Game active - Use arrow keys, P for power-ups!";
+        }
+      }
+      
+      initializeGame() {
+        this.gameActive = false;this.moves = 0;this.powerUpsCollected = 0;
+        this.playerPos = { row: 0, col: 0 };this.gameTime=0;this.specialElements=new Map();
+        this.elements.achievementBanner.classList.remove('show');
+        if(this._bannerTimeout) clearTimeout(this._bannerTimeout);
+        const cfg = this.currentMode.generateLevel(this.currentLevel)||{size:5,powerUps:0,beacons:1,portals:0};
+        this.mazeSize = cfg.size;
+        this.elements.mazeGrid.style.gridTemplateColumns=`repeat(${this.mazeSize},1fr)`;
+        this.maze = Array(this.mazeSize).fill(0).map(()=>Array(this.mazeSize).fill(1));
+        this._genPaths();
+        this._addSpecials(cfg);
+        this._setExit();
+        this.renderMaze();
+        this.updateUI();
+        this.updateHighScoreDisplay();
+        
+        if (this.isMobile()) {
+          this.showMobileStartOverlay();
+          this.audio.speak(`${this.currentMode.name} Mode - Level ${this.currentLevel}. Tap to start the game.`, 'urgent');
+          this.elements.statusMessage.textContent = "Tap to start, or use buttons below for help/scan.";
+        } else {
+          this.audio.speak(`${this.currentMode.name} Mode - Level ${this.currentLevel}. Press Space or Enter to start.`, 'urgent');
+          this.elements.statusMessage.textContent = "Press Space/Enter to start, H for help.";
+        }
+      }
+      
+      _genPaths() {
+        const V = Array(this.mazeSize).fill(0).map(()=>Array(this.mazeSize).fill(false)), stack=[{row:0,col:0}];
+        this.maze[0][0]=0;V[0][0]=true;
+        const d=[[0,1],[0,-1],[1,0],[-1,0]];
+        while(stack.length>0){
+          const c=stack[stack.length-1],nbs=[];
+          for(const [dr,dc] of d){
+            let nr=c.row+dr,nc=c.col+dc;
+            if(nr>=0&&nr<this.mazeSize&&nc>=0&&nc<this.mazeSize&&!V[nr][nc]) nbs.push({row:nr,col:nc});
+          }
+          if(nbs.length>0){
+            const nxt=nbs[Math.random()*nbs.length|0];
+            this.maze[nxt.row][nxt.col]=0;V[nxt.row][nxt.col]=true;stack.push(nxt);
+          } else stack.pop();
+        }
+      }
+      _addSpecials(cfg){
+        const getFree=()=>{
+          let c=[];for(let r=0;r<this.mazeSize;r++)for(let co=0;co<this.mazeSize;co++)if(this.maze[r][co]===0&&(r!==0||co!==0))c.push({row:r,col:co});return c;
+        };
+        let pcells = getFree();
+        for(let i=0;i<(cfg.powerUps||0)&&(pcells.length);i++){
+          const idx=Math.random()*pcells.length|0,pos=pcells.splice(idx,1)[0];this.specialElements.set(`${pos.row},${pos.col}`,'power-up');
+        }
+        for(let i=0;i<(cfg.beacons||0)&&(pcells.length);i++){
+          const idx=Math.random()*pcells.length|0,pos=pcells.splice(idx,1)[0];this.specialElements.set(`${pos.row},${pos.col}`,'beacon');
+        }
+        for(let i=0;i<(cfg.portals||0)&&(pcells.length>=2);i++){
+          const idx1=Math.random()*pcells.length|0,pos1=pcells.splice(idx1,1)[0];
+          const idx2=Math.random()*pcells.length|0,pos2=pcells.splice(idx2,1)[0];
+          this.specialElements.set(`${pos1.row},${pos1.col}`,'portal-'+i);
+          this.specialElements.set(`${pos2.row},${pos2.col}`,'portal-'+i);
+        }
+      }
+      _setExit(){
+        let pc=[];for(let r=0;r<this.mazeSize;r++)for(let c=0;c<this.mazeSize;c++)if(this.maze[r][c]===0&&(r!==0||c!==0)&&!this.specialElements.has(`${r},${c}`))pc.push({row:r,col:c});
+        this.exitPos=pc.length?pc[Math.random()*pc.length|0]:{row:this.mazeSize-1,col:this.mazeSize-1};
+      }
+      renderMaze(){
+        this.elements.mazeGrid.innerHTML='';
+        for(let r=0;r<this.mazeSize;r++)for(let c=0;c<this.mazeSize;c++){
+          const cell=document.createElement('div');
+          cell.classList.add('maze-cell');
+          cell.setAttribute('data-row',r);
+          cell.setAttribute('data-col',c);
+          cell.setAttribute('role','gridcell');
+          const key=`${r},${c}`;
+          if(this.maze[r][c]===1){cell.classList.add('wall');cell.setAttribute('aria-label',`Wall at Row ${r+1}, Column ${c+1}`);}
+          else if(this.specialElements.has(key)){
+            let t=this.specialElements.get(key);
+            if(t==='power-up'){cell.classList.add('power-up');cell.setAttribute('aria-label',`Power-up at Row ${r+1}, Column ${c+1}`);}
+            else if(t==='beacon'){cell.classList.add('beacon');cell.setAttribute('aria-label',`Beacon at Row ${r+1}, Column ${c+1}`);}
+            else if(t.startsWith('portal')){cell.classList.add('portal');cell.setAttribute('aria-label',`Portal at Row ${r+1}, Column ${c+1}`);}
+          }
+          this.elements.mazeGrid.appendChild(cell);
+        }
+      }
+      updateUI(){
+        document.querySelectorAll('.maze-cell.player,.maze-cell.exit').forEach(cell=>cell.classList.remove('player','exit'));
+        const playerCell=this.elements.mazeGrid.querySelector(`[data-row="${this.playerPos.row}"][data-col="${this.playerPos.col}"]`);
+        if(playerCell){playerCell.classList.add('player');playerCell.focus();}
+        const exitCell=this.elements.mazeGrid.querySelector(`[data-row="${this.exitPos.row}"][data-col="${this.exitPos.col}"]`);
+        if(exitCell)exitCell.classList.add('exit');
+        this.elements.scoreDisplay.textContent=`Moves: ${this.moves}`;
+        this.elements.powerUpsDisplay.textContent=`Power-ups: ${this.powerUpsCollected}`;
+        this.elements.positionDisplay.textContent=`Row ${this.playerPos.row+1}, Col ${this.playerPos.col+1}`;
+        this.elements.levelInfo.textContent=`${this.currentMode.name} Mode - Level ${this.currentLevel}`;
+        this.elements.timerDisplay.textContent=`Time: 0:00`;
+      }
+      updateHighScoreDisplay(){
+        this.elements.highScoreDisplay.textContent="Best: N/A";
+      }
+      movePlayer(dr,dc,direction){
+        if(!this.gameActive)return;
+        const nr=this.playerPos.row+dr,nc=this.playerPos.col+dc;
+        if(nr<0||nr>=this.mazeSize||nc<0||nc>=this.mazeSize)
+          {this.audio.playMovementSound(direction,false);this.audio.speak("Boundary reached.",'urgent');return;}
+        if(this.maze[nr][nc]===1)
+          {this.audio.playMovementSound(direction,false);this.audio.speak("Wall detected.",'urgent');return;}
+        this.audio.playMovementSound(direction,true);
+        this.playerPos.row=nr;this.playerPos.col=nc;this.moves++;
+        this.handleSpecialElement();
+        this.updateUI();
+        let d=Math.abs(this.playerPos.row-this.exitPos.row)+Math.abs(this.playerPos.col-this.exitPos.col),
+        desc = `Moved ${direction} to Row ${nr+1}, Column ${nc+1}.`;
+        if(d===1){desc+=" Exit is adjacent!";this.audio.playTone(1000,500);}
+        else if(d===2){desc+=" Exit is very close.";this.audio.playTone(880,300);}
+        else if(d<=3){desc+=" Exit is nearby.";}
+        this.audio.speak(desc);this.checkWinCondition();
+      }
+      handleSpecialElement(){
+        const key = `${this.playerPos.row},${this.playerPos.col}`;
+        if(this.specialElements.has(key)){
+          let t=this.specialElements.get(key);
+          if(t==='power-up'){
+            this.powerUpsCollected++;
+            this.specialElements.delete(key);
+            this.audio.playPowerUpSound();
+            this.audio.speak(this.isMobile() ? "Power-up collected! Double-tap to use." : "Power-up collected! Press P to use.", 'urgent');
+          }
+          else if(t==='beacon'){this.audio.speak(this.getDirectionToExit(true),'urgent');}
+          else if(t.startsWith('portal')){
+            for(const [k,ty] of this.specialElements.entries())if(ty===t&&k!==key){
+              const [r,c]=k.split(',').map(Number);
+              this.playerPos.row=r;this.playerPos.col=c;this.audio.playTone(500,300,'sine');
+              this.audio.speak(`Teleported to Row ${r+1}, Column ${c+1}!`,'urgent');
+              break;
+            }
+          }
+        }
+      }
+      usePowerUp(){
+        if(this.powerUpsCollected<=0){
+          this.audio.speak("No power-ups available.",'urgent');
+          return;
+        }
+        this.powerUpsCollected--;
+        let path=this._findPathToExit();
+        if(path.length>1){
+          let n=path[1];
+          let d=this.getDirectionBetweenPoints(this.playerPos,n);
+          this.audio.speak(`Power-up activated! Path revealed - Go ${d}`,'urgent');
+          this.audio.playTone(1200,800);
+        } else this.audio.speak("You're at exit!",'urgent');
+        this.updateUI();
+      }
+      _findPathToExit(){
+        let q=[{pos:this.playerPos,path:[this.playerPos]}],visited=new Set([`${this.playerPos.row},${this.playerPos.col}`]);
+        while(q.length){
+          let {pos,path}=q.shift();
+          if(pos.row===this.exitPos.row&&pos.col===this.exitPos.col) return path;
+          for(const[dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+            let nr=pos.row+dr,nc=pos.col+dc,k=`${nr},${nc}`;
+            if(nr>=0&&nr<this.mazeSize&&nc>=0&&nc<this.mazeSize&&this.maze[nr][nc]===0&&!visited.has(k)){visited.add(k);q.push({pos:{row:nr,col:nc},path:[...path,{row:nr,col:nc}]});}
+          }
+        }return[this.playerPos];
+      }
+      getDirectionBetweenPoints(from,to){
+        let dr=to.row-from.row,dc=to.col-from.col;
+        if(dr<0) return 'north';if(dr>0)return'south';if(dc<0)return'west';if(dc>0)return'east';return 'here';
+      }
+      scanArea(){
+        if(!this.gameActive){this.audio.speak("Start the game first to scan the area.");return;}
+        const {row,col}=this.playerPos;
+        const dirs = [ { name:'north',dr:-1,dc:0 },{name:'south',dr:1,dc:0 },{name:'west',dr:0,dc:-1},{name:'east',dr:0,dc:1} ];
+        let result = `Scanning from Row ${row+1}, Column ${col+1}. `, finds=[];
+        dirs.forEach(dir=>{
+          const r=row+dir.dr,c=col+dir.dc,k=`${r},${c}`;
+          if(r<0||r>=this.mazeSize||c<0||c>=this.mazeSize) finds.push(`${dir.name}: boundary`);
+          else if(this.maze[r][c]===1) finds.push(`${dir.name}: wall`);
+          else{
+            let d = `${dir.name}: open`;
+            if(r===this.exitPos.row&&c===this.exitPos.col)d+=' EXIT!';
+            else if(this.specialElements.has(k)){
+              let t=this.specialElements.get(k);
+              if(t==='power-up')d+=" power-up";
+              else if(t==='beacon')d+=" beacon";
+              else if(t.startsWith('portal'))d+=" portal";
+            }
+            finds.push(d);
+          }
+        });
+        result+=finds.join(', ')+'.';
+        this.audio.speak(result,'urgent');
+      }
+      getDirectionToExit(beacon){
+        let dr=this.exitPos.row-this.playerPos.row,dc=this.exitPos.col-this.playerPos.col,distance=Math.abs(dr)+Math.abs(dc);
+        if(!beacon&&distance>4)return"Exit too far. Keep exploring!";
+        let dir=beacon?"Beacon: Exit is ":"Exit is ";
+        if(Math.abs(dr)>Math.abs(dc)){dir+=dr>0?"south":"north";if(dc!==0)dir+=dc>0?" east":" west";}
+        else if(dc!==0){dir+=dc>0?"east":"west";if(dr!==0)dir+=dr>0?" south":" north";}
+        return dir+=` about ${distance} steps.`;
+      }
+      checkWinCondition(){
+        if(this.playerPos.row===this.exitPos.row&&this.playerPos.col===this.exitPos.col){
+          this.gameActive=false;
+          this.showAchievement(`Level ${this.currentLevel} Complete!`);
+          this.audio.playLevelCompleteSound();
+          this.audio.speak(`Level ${this.currentLevel} completed in ${this.moves} moves!`, 'urgent', () => setTimeout(()=>{
+            this.currentLevel++;
+            this.initializeGame();
+          },2000));
+        }
+      }
+      showAchievement(text){
+        const banner = this.elements.achievementBanner;
+        if(this._bannerTimeout) clearTimeout(this._bannerTimeout);
+        banner.textContent = text;
+        banner.classList.add('show');
+        this._bannerTimeout = setTimeout(()=>{banner.classList.remove('show');},4000);
+      }
+toggleHelp(){
+  const ov = this.elements.helpOverlay;
+  ov.classList.toggle('visible');
+  
+  if(ov.classList.contains('visible')){
+    // Offer multiple options for different user preferences
+    const optionsText = this.isMobile() ? 
+      "Help menu opened. Tap once to hear full game instructions, double-tap to skip and browse silently, or press Escape to close." :
+      "Help menu opened. Press 1 or tap to hear full game instructions, press 2 or double-tap to skip, or press Escape to close.";
+    
+    this.audio.speak(optionsText, 'urgent');
+    this.elements.helpCloseButton.focus();
+    
+    // Initialize tap detection variables
+    let lastTap = 0;
+    const doubleTapDelay = 400; // Slightly longer for help menu
+    
+    // Add temporary keydown listener for desktop
+    this.helpKeyListener = (e) => {
+      if (e.key === '1') {
+        e.preventDefault();
+        this.readFullHelp();
+        this.cleanupHelpListeners();
+      } else if (e.key === '2') {
+        e.preventDefault();
+        this.audio.speak("Help reading skipped. You can now browse the help content silently using screen reader or visual display.", 'urgent');
+        this.cleanupHelpListeners();
+      }
+    };
+    document.addEventListener('keydown', this.helpKeyListener);
+    
+    // Add touch listener for mobile
+    this.helpTouchListener = (e) => {
+      e.preventDefault();
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTap;
+      
+      if (tapLength < doubleTapDelay && tapLength > 0) {
+        // Double-tap detected - skip reading
+        this.audio.speak("Help reading skipped. You can now browse the help content silently.", 'urgent');
+        this.cleanupHelpListeners();
+        lastTap = 0;
+      } else {
+        // Single tap - read full help
+        setTimeout(() => {
+          if (lastTap === currentTime) { // Ensure it's still a single tap
+            this.readFullHelp();
+            this.cleanupHelpListeners();
+          }
+        }, doubleTapDelay);
+      }
+      
+      lastTap = currentTime;
+    };
+    
+    // Add touch listener to the help overlay
+    this.elements.helpOverlay.addEventListener('touchend', this.helpTouchListener);
+    
+  } else {
+    this.audio.speak("Help menu closed.");
+    this.cleanupHelpListeners();
+  }
+}
+
+// Helper function to clean up event listeners
+cleanupHelpListeners() {
+  if (this.helpKeyListener) {
+    document.removeEventListener('keydown', this.helpKeyListener);
+    this.helpKeyListener = null;
+  }
+  if (this.helpTouchListener) {
+    this.elements.helpOverlay.removeEventListener('touchend', this.helpTouchListener);
+    this.helpTouchListener = null;
+  }
+}
+
+readFullHelp() {
+  const fullInstructions = `Complete Sound Maze Navigator Instructions:
+  
+  This is a fully accessible maze navigation game designed for visually impaired players. You control a player character on a grid-based maze using only audio and keyboard or touch controls.
+  
+  Objective: Find and reach the exit, which appears as a green glowing cell with accompanying victory sounds.
+  
+  ${this.isMobile() ? 'Mobile' : 'Desktop'} Controls: 
+  ${this.isMobile() ? 
+    'Swipe in any direction to move your character. Swipe up for north, down for south, left for west, right for east. Double-tap anywhere to use collected power-ups. Tap buttons for scan, help, and restart functions.' :
+    'Use arrow keys to navigate. Up arrow moves north, down moves south, left moves west, right moves east. Press P to use power-ups, S to scan area, H for help, R to restart, and Space or Enter to start the game.'}
+  
+  Audio Cues: Listen for directional movement sounds and proximity alerts. The game announces when the exit is adjacent, very close, or nearby. Wall collisions produce different sounds than successful movement.
+  
+  Special Elements: Power-ups are orange spinning items that reveal the optimal path to the exit when used. Yellow beacons provide directional hints when stepped on. Purple portals teleport you to other portal locations.
+  
+  Area Scanning: Use the scan function to get a detailed description of all adjacent cells, including walls, open paths, special elements, and exit locations.
+  
+  The game progresses through multiple levels with increasing complexity. 
+  
+  You can now browse the visual help content or close this menu with Escape. Complete instructions finished.`;
+  
+  this.audio.speak(fullInstructions, 'urgent');
+}
+
+      restart(){ 
+        this.audio.speak("Restarting game.",'normal',()=>this.initializeGame()); 
+      }
+      handleKeyDown(e){
+        if(this.elements.helpOverlay.classList.contains('visible')){
+          if(e.key==='Escape'||e.key.toLowerCase()==='h'){e.preventDefault();this.toggleHelp();}return;
+        }
+        switch (e.key.toLowerCase()){
+          case 'h': e.preventDefault();this.toggleHelp();break;
+          case 'arrowup':e.preventDefault();this.movePlayer(-1,0,'up');break;
+          case 'arrowdown':e.preventDefault();this.movePlayer(1,0,'down');break;
+          case 'arrowleft':e.preventDefault();this.movePlayer(0,-1,'left');break;
+          case 'arrowright':e.preventDefault();this.movePlayer(0,1,'right');break;
+          case ' ':case 'enter':e.preventDefault();this.startGame();break;
+          case 's':e.preventDefault();this.scanArea();break;
+          case 'p':e.preventDefault();this.usePowerUp();break;
+          case 'r':e.preventDefault();this.restart();break;
+        }
+      }
+    }
+
+    let game;
+    window.addEventListener('DOMContentLoaded',()=>{
+      game = new EnhancedMazeGame();
+    });
+  </script>
+</body>
+</html>
