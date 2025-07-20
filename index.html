@@ -343,7 +343,7 @@
         if (!this.gameActive) {
           this.gameActive = true;
           this.hideMobileStartOverlay();
-          this.audio.speak("Game started! " + (this.isMobile() ? "Swipe to move. Double-tap to use power-ups!" : "Use arrow keys to navigate. Press P for power-up s!"), 'urgent');
+          this.audio.speak("Game started! " + (this.isMobile() ? "Swipe to move. Double-tap to use power-ups!" : "Use arrow keys to navigate. Press P for power-up's!"), 'urgent');
           this.elements.statusMessage.textContent = this.isMobile() ? "Game active - Swipe to move, double-tap for power-ups!" : "Game active - Use arrow keys, P for power-ups!";
         }
       }
