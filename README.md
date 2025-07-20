@@ -4,7 +4,7 @@
 
 An inclusive, audio-first maze navigation game designed for children with disabilities, particularly visual impairments. Built with accessibility at its core, this game promotes equal play opportunities while being fun and educational for all users.
 
-Click to play: [Play Sound Maze Navigator](https://-sooryanathg.github.io/sound-maze-navigator/)  
+Click to play: [Play Sound Maze Navigator](https://sooryanathg.github.io/sound-maze-navigator/)  
 *(Hosted on GitHub Pages - works on desktop and mobile browsers)*
 
 ## Description
